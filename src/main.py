@@ -1,55 +1,33 @@
-import asyncio
-import cv2
-import numpy as np
-from obswebsocket import obsws, requests
-from io import BytesIO
-from PIL import Image
-import logging
-logging.basicConfig(level=logging.DEBUG)
+import time
 
-# OBS WebSocket設定
-host = "192.168.134.167"
-port = 4455
-password = "ylim2gCbnEutyIpY"  # OBS WebSocketで設定したパスワード
+from LoungeTracker import LoungeTracker
+from OBS import OBS
+from OCR import OCR
+from models import ImageRegion
 
-async def capture_obs_output():
-    print("== start ==")
-    ws = obsws(host, port, password)
-    ws.connect()
-    # print("connect: ", ws)
-
+if __name__ == "__main__":
     try:
-        # # バージョン情報の取得
-        # version_request = requests.GetVersion()
-        # version_response = ws.call(version_request)
-        # print(f"Response: {version_response}")
-        # print(f"Response Data: {version_response.datain}")
+        lounge_tracker = LoungeTracker()
+        while True:
+            obs = OBS()
+            obs.connect()
+            screen_shot = obs.get_source_screen_shot()
 
-        # ソース（入力）リストを取得
-        inputs_response = ws.call(requests.GetInputList())
-        
-        print("Available sources:")
-        for input in inputs_response.datain['inputs']:
-            print(f"Source: {input['inputName']} (Type: {input['inputKind']})")
+            ocr = OCR()
+            # 順位表のプレーヤー名の範囲
+            region = ImageRegion()
+            detected_strings = ocr.extract_text(screen_shot, region)
+            print(detected_strings)
 
-        # スクリーンショットの取得
-        source_name = "gameCapture"  # OBSで設定したソース名
-        
-        print(f"Sending request with sourceName: {source_name}")
-        screenshot_response = ws.call(requests.GetSourceScreenshot(
-            sourceName=source_name,imageFormat="png"
-        ))
-        print(f"Screenshot Response: {screenshot_response}")
-        if screenshot_response.status:
-            print(f"Screenshot Data: {screenshot_response.datain['imageData'][:100]}...")
-        else:
-            print(f"Screenshot Error: {screenshot_response.datain}")
+            if not lounge_tracker.is_valid_leaderboard_screenshot(detected_strings):
+                time.sleep(1)
+                continue
+            print(detected_strings)
+            lounge_tracker.update_total_scores(detected_strings)
+            print(lounge_tracker)
 
+            time.sleep(60)
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
-        ws.disconnect()
-        cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    asyncio.run(capture_obs_output())
+        obs.disconnect()

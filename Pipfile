@@ -7,6 +7,7 @@ name = "pypi"
 obs-websocket-py = "*"
 opencv-python = "*"
 image = "*"
+easyocr = "*"
 
 [dev-packages]
 
