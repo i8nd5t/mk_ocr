@@ -8,6 +8,7 @@ obs-websocket-py = "*"
 opencv-python = "*"
 image = "*"
 easyocr = "*"
+python-dotenv = "*"
 
 [dev-packages]
 

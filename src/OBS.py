@@ -1,19 +1,21 @@
 from obswebsocket import obsws, requests
+import os
+from dotenv import load_dotenv
 
-# OBS WebSocket設定
-host = "192.168.134.167"
-port = 4455
-password = "ylim2gCbnEutyIpY"  # OBS WebSocketで設定したパスワード
+load_dotenv()
 
 class OBS:
     """
     OBSとの通信、画面キャプチャの取得を行う
     """
+
     ws = None
 
     # obsに接続
     def connect(self):
-        self.ws = obsws(host, port, password)
+        self.ws = obsws(
+            os.environ["OBS_HOST"], os.environ["OBS_PORT"], os.environ["OBS_PASSWORD"]
+        )
         self.ws.connect()
 
     # スクリーンショットを取得しBase64形式で返却する
